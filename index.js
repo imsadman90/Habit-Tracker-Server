@@ -24,3 +24,22 @@ const client = new MongoClient(uri, {
             deprecationErrors: true,
       },
 });
+
+const verifyToken = async (req, res, next) => {
+      const authorization = req.headers.authorization;
+      if (!authorization) {
+            return res.status(401).send({ message: "unauthorized access. Token not found!" });
+      }
+      const token = authorization.split(" ")[1];
+      try {
+            await admin.auth().verifyIdToken(token);
+            next();
+      } catch (error) {
+            res.status(401).send({ message: "unauthorized access." });
+      }
+};
+
+async function run() {
+      try {
+            const db = client.db("habit-tracker-db");
+            const habitCollection = db.collection("habits");
