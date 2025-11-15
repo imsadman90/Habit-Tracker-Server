@@ -107,3 +107,47 @@ async function run() {
                         .toArray();
                   res.send(result);
             });
+
+            app.post("/habits/:id/complete", verifyToken, async (req, res) => {
+                  try {
+                        const { id } = req.params;
+                        const { date } = req.body;
+                        const objectId = ObjectId.isValid(id) ? new ObjectId(id) : id;
+
+                        const habit = await habitCollection.findOne({ _id: objectId });
+                        if (!habit) return res.status(404).send({ success: false, message: "Habit not found" });
+
+                        const todayStr = date || new Date().toISOString().split("T")[0];
+
+                        if (habit.completionHistory?.includes(todayStr)) {
+                              return res.status(400).send({ success: false, message: "Already completed today" });
+                        }
+
+                        const updatedHistory = [...(habit.completionHistory || []), todayStr];
+
+                        await habitCollection.updateOne(
+                              { _id: objectId },
+                              { $set: { completionHistory: updatedHistory } }
+                        );
+
+                        res.send({ success: true, result: { ...habit, completionHistory: updatedHistory } });
+                  } catch (error) {
+                        console.error(error);
+                        res.status(500).send({ success: false, message: "Server error" });
+                  }
+            });
+
+            console.log("Connected to MongoDB habit-tracker-db successfully!");
+      } finally {
+      }
+}
+
+run().catch(console.dir);
+
+app.get("/", (req, res) => {
+      res.send("Habit Tracker Server is running fine!");
+});
+
+app.listen(port, () => {
+      console.log(`Server is listening on port ${port}`);
+});
