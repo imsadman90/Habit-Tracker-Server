@@ -79,3 +79,31 @@ async function run() {
                   const result = await habitCollection.updateOne(filter, update);
                   res.send({ success: true, result });
             });
+            app.delete("/habits/:id", async (req, res) => {
+                  const { id } = req.params;
+                  const result = await habitCollection.deleteOne({ _id: new ObjectId(id) });
+                  res.send({ success: true, result });
+            });
+
+            app.get("/latest-habits", async (req, res) => {
+                  const result = await habitCollection
+                        .find()
+                        .sort({ created_at: -1 })
+                        .limit(6)
+                        .toArray();
+                  res.send(result);
+            });
+
+            app.get("/my-habits", async (req, res) => {
+                  const email = req.query.email;
+                  const result = await habitCollection.find({ created_by: email }).toArray();
+                  res.send(result);
+            });
+
+            app.get("/search", async (req, res) => {
+                  const search_text = req.query.search;
+                  const result = await habitCollection
+                        .find({ name: { $regex: search_text, $options: "i" } })
+                        .toArray();
+                  res.send(result);
+            });
