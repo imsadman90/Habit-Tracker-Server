@@ -43,3 +43,39 @@ async function run() {
       try {
             const db = client.db("habit-tracker-db");
             const habitCollection = db.collection("habits");
+            app.get("/habits", async (req, res) => {
+                  const result = await habitCollection.find().toArray();
+                  res.send(result);
+            });
+
+            app.get("/habits/:id", async (req, res) => {
+                  const { id } = req.params;
+                  let result = null;
+
+                  try {
+                        if (ObjectId.isValid(id)) result = await habitCollection.findOne({ _id: new ObjectId(id) });
+                        if (!result) result = await habitCollection.findOne({ _id: id });
+                        if (!result) return res.status(404).send({ success: false, message: "Habit not found" });
+
+                        res.send({ success: true, result });
+                  } catch (err) {
+                        console.error(err);
+                        res.status(500).send({ success: false, message: "Server error" });
+                  }
+            });
+
+            app.post("/habits", async (req, res) => {
+                  const data = req.body;
+                  const result = await habitCollection.insertOne(data);
+                  res.send({ success: true, result });
+            });
+
+            app.put("/habits/:id", async (req, res) => {
+                  const { id } = req.params;
+                  const data = req.body;
+                  const objectId = new ObjectId(id);
+                  const filter = { _id: objectId };
+                  const update = { $set: data };
+                  const result = await habitCollection.updateOne(filter, update);
+                  res.send({ success: true, result });
+            });
